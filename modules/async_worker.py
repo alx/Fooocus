@@ -237,6 +237,7 @@ def worker():
 
         swapper = None
         face_analyser = None
+        face_to_prompt = False
 
         seed = int(image_seed)
         print(f'[Parameters] Seed = {seed}')
@@ -316,6 +317,9 @@ def worker():
                         'face')
                 if len(cn_tasks[flags.cn_insightface]) > 0:
                     swapper, face_analyser = modules.config.downloading_faceswap()
+                if len(cn_tasks[flags.cn_face_to_prompt]) > 0:
+                    swapper, face_analyser = modules.config.downloading_faceswap()
+                    prompt_to_face = True
                 progressbar(async_task, 1, 'Loading control models ...')
 
         # Load or unload CNs
@@ -353,6 +357,25 @@ def worker():
             if prompt == '':
                 # disable expansion when empty since it is not meaningful and influences image prompt
                 use_expansion = False
+
+            if face_to_prompt:
+
+                def face_to_prompt(self, faces):
+                    if len(faces) == 0:
+                        return ""
+
+                    face_prompt = []
+
+                    for face in faces:
+                        gender = "woman" if face['gender'] == 0 else "man"
+                        face_prompt.append(f"%s %syo" % (gender, face["age"]))
+                        # prompt.append(gender)
+
+                    return ", ".join(face_prompt)
+
+                source_faces = face_analyser.get(cv2.imread(str(src_path)))
+                face_prompt = face_to_prompt(source_faces)
+                prompt = ", ".join([prompt, face_prompt])
 
             extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
             extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
