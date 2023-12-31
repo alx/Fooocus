@@ -20,17 +20,23 @@ SAMPLER_NAMES = KSAMPLER_NAMES + ["ddim", "uni_pc", "uni_pc_bh2"]
 sampler_list = SAMPLER_NAMES
 scheduler_list = SCHEDULER_NAMES
 
+cn_face_to_prompt = "FaceToPrompt"
 cn_ip = "ImagePrompt"
 cn_ip_face = "FaceSwap"
 cn_insightface = "InsightFaceSwap"
 cn_canny = "PyraCanny"
 cn_cpds = "CPDS"
 
-ip_list = [cn_ip, cn_canny, cn_cpds, cn_ip_face, cn_insightface]
+ip_list = [cn_face_to_prompt, cn_ip, cn_canny, cn_cpds, cn_ip_face, cn_insightface]
 default_ip = cn_ip
 
 default_parameters = {
-    cn_ip: (0.5, 0.6), cn_ip_face: (0.9, 0.75), cn_insightface: (0.5, 1.0), cn_canny: (0.5, 1.0), cn_cpds: (0.5, 1.0)
+    cn_face_to_prompt: (0.5, 1.0),
+    cn_ip: (0.5, 0.6),
+    cn_ip_face: (0.9, 0.75),
+    cn_insightface: (0.5, 1.0),
+    cn_canny: (0.5, 1.0),
+    cn_cpds: (0.5, 1.0)
 }  # stop, weight
 
 inpaint_engine_versions = ['None', 'v1', 'v2.5', 'v2.6']
