@@ -35,6 +35,7 @@ def worker():
     import extras.ip_adapter as ip_adapter
     import extras.face_crop
     import fooocus_version
+    import cv2
 
     from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion
     from modules.private_logger import log
@@ -319,7 +320,8 @@ def worker():
                     swapper, face_analyser = modules.config.downloading_faceswap()
                 if len(cn_tasks[flags.cn_face_to_prompt]) > 0:
                     swapper, face_analyser = modules.config.downloading_faceswap()
-                    prompt_to_face = True
+                    face_to_prompt = True
+                    print(f'[Image Prompt] FaceToPrompt activated')
                 progressbar(async_task, 1, 'Loading control models ...')
 
         # Load or unload CNs
@@ -358,25 +360,6 @@ def worker():
                 # disable expansion when empty since it is not meaningful and influences image prompt
                 use_expansion = False
 
-            if face_to_prompt:
-
-                def face_to_prompt(self, faces):
-                    if len(faces) == 0:
-                        return ""
-
-                    face_prompt = []
-
-                    for face in faces:
-                        gender = "woman" if face['gender'] == 0 else "man"
-                        face_prompt.append(f"%s %syo" % (gender, face["age"]))
-                        # prompt.append(gender)
-
-                    return ", ".join(face_prompt)
-
-                source_faces = face_analyser.get(cv2.imread(str(src_path)))
-                face_prompt = face_to_prompt(source_faces)
-                prompt = ", ".join([prompt, face_prompt])
-
             extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
             extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
 
@@ -395,6 +378,25 @@ def worker():
                 task_negative_prompt = apply_wildcards(negative_prompt, task_rng)
                 task_extra_positive_prompts = [apply_wildcards(pmt, task_rng) for pmt in extra_positive_prompts]
                 task_extra_negative_prompts = [apply_wildcards(pmt, task_rng) for pmt in extra_negative_prompts]
+
+                if face_to_prompt:
+                    print(f'[FaceToPrompt] Starting')
+                    source_image, cn_stop, cn_weight = cn_tasks[flags.cn_face_to_prompt][0]
+
+                    source_faces = face_analyser.get(source_image)
+                    print(f'[FaceToPrompt] %i faces detected' % len(source_faces))
+
+                    face_prompt = []
+                    if len(source_faces) > 0:
+                        face_prompt = [
+                            f"%s %syo" % (
+                                "woman" if face['gender'] == 0 else "man",
+                                face['age']
+                            ) for face in source_faces
+                        ]
+
+                    task_prompt = f'%s, %s' % (task_prompt, ', '.join(face_prompt))
+                    print(f'[FaceToPrompt] %s' % task_prompt)
 
                 positive_basic_workloads = []
                 negative_basic_workloads = []
